@@ -135,12 +135,21 @@ func resolveNames(peers []string) []string {
 	return ret
 }
 
+func collectRows(rows []string) string {
+	ret := ""
+	for i, row := range rows {
+		ret += row
+		if i < len(rows)-1 {
+			ret += "\n"
+		}
+	}
+	return ret
+}
+
 func main() {
 	peers, err := getPeersList()
     if err != nil { panic(err) }
     peers = normaliseUris(peers)
     peers = resolveNames(peers)
-    for _, peer := range peers{
-    	fmt.Println(peer)	
-    }
+    fmt.Println(collectRows(peers))
 }
