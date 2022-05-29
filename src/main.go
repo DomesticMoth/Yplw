@@ -12,6 +12,7 @@ import (
         git "github.com/go-git/go-git/v5"
         http "github.com/go-git/go-git/v5/plumbing/transport/http"
         memory "github.com/go-git/go-git/v5/storage/memory"
+        object "github.com/go-git/go-git/v5/plumbing/object"
 )
 
 func getAllFilesRecursiveByPath(fs *billy.Filesystem, path string) ([]string, error) {
@@ -161,10 +162,52 @@ func getTimestampRow() string {
 	return "# Last chainged at "+time.Now().UTC().Format("02 January 2006 15:04")+" UTC\n"
 }
 
+func publish(repo string, file string, user string, pass string, text string) error {
+	var err error = nil
+	var storer *memory.Storage
+	var fs billy.Filesystem
+    storer = memory.NewStorage()
+    fs = memfs.New()
+    auth := &http.BasicAuth{
+            Username: user,
+            Password: pass,
+    }
+    r, err := git.Clone(storer, fs, &git.CloneOptions{
+            URL:  repo,
+            Auth: auth,
+    })
+    if err != nil { return err }
+    w, err := r.Worktree()
+    if err != nil { return err }
+    file = strings.TrimPrefix(file, "/")
+    newFile, err := fs.Create(file)
+    if err != nil { return err }
+    newFile.Write([]byte(text))
+    newFile.Close()
+    _, err = w.Add(file)
+    if err != nil { return err }
+    _, err = w.Commit("Update "+file, &git.CommitOptions{
+		Author: &object.Signature{
+			Name:  "Yplw Bot",
+			Email: "",
+			When:  time.Now(),
+		},
+    })
+    if err != nil { return err }
+	err = r.Push(&git.PushOptions{
+		RemoteName: "origin",
+		Auth: auth,
+	})
+	return err
+}
+
 func main() {
 	peers, err := getPeersList()
     if err != nil { panic(err) }
     peers = normaliseUris(peers)
     peers = resolveNames(peers)
-    fmt.Println(getTimestampRow()+collectRows(peers))
+    text := getTimestampRow()+collectRows(peers)
+    fmt.Println("")
+    err = publish("", "/yggdrasil.txt", "", "", text)
+    if err != nil { panic(err) }
 }
