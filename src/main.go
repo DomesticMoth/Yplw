@@ -146,10 +146,26 @@ func collectRows(rows []string) string {
 	return ret
 }
 
+type Deduplicator struct{
+	latest *string
+}
+
+func (d *Deduplicator) get(s string) *string {
+	if d.latest != nil { if s == *d.latest { return nil } }
+	d.latest = &s
+	return &s
+}
+
 func main() {
+	d := Deduplicator{}
 	peers, err := getPeersList()
     if err != nil { panic(err) }
     peers = normaliseUris(peers)
     peers = resolveNames(peers)
-    fmt.Println(collectRows(peers))
+    fmt.Println(d.get(collectRows(peers)))
+	peers, err = getPeersList()
+    if err != nil { panic(err) }
+    peers = normaliseUris(peers)
+    peers = resolveNames(peers)
+    fmt.Println(d.get(collectRows(peers)))
 }
