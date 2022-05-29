@@ -103,6 +103,17 @@ func resolveNames(peers []string) []string {
 		if addr != nil { continue }
 		ips ,err := net.LookupIP(host)
 		if err != nil { continue }
+		for _, ip := range ips {
+			if ip.To4() == nil {
+				// v6
+				u.Host = "["+ip.String()+"]:"+port
+				ret = append(ret, u.String())
+			}else{
+				//v4
+				u.Host = ip.String()+":"+port
+				ret = append(ret, u.String())
+			}
+		}
 		if u.Scheme == "tls" {
 			// add sni
 			q, _ := url.ParseQuery(u.RawQuery)
@@ -129,7 +140,7 @@ func main() {
     if err != nil { panic(err) }
     peers = normaliseUris(peers)
     peers = resolveNames(peers)
-    for _, peer := range peers {
-    	fmt.Println(peer)
+    for _, peer := range peers{
+    	fmt.Println(peer)	
     }
 }
