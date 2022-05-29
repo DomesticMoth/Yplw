@@ -2,6 +2,7 @@ package main
 
 import (
         "fmt"
+        "time"
         "strings"
         "bytes"
         "net"
@@ -156,16 +157,14 @@ func (d *Deduplicator) get(s string) *string {
 	return &s
 }
 
+func getTimestampRow() string {
+	return "# Last chainged at "+time.Now().UTC().Format("02 January 2006 15:04")+" UTC\n"
+}
+
 func main() {
-	d := Deduplicator{}
 	peers, err := getPeersList()
     if err != nil { panic(err) }
     peers = normaliseUris(peers)
     peers = resolveNames(peers)
-    fmt.Println(d.get(collectRows(peers)))
-	peers, err = getPeersList()
-    if err != nil { panic(err) }
-    peers = normaliseUris(peers)
-    peers = resolveNames(peers)
-    fmt.Println(d.get(collectRows(peers)))
+    fmt.Println(getTimestampRow()+collectRows(peers))
 }
