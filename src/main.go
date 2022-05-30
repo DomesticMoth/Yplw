@@ -1,7 +1,7 @@
 package main
 
 import (
-        "fmt"
+        //"fmt"
         "time"
         "strings"
         "bytes"
@@ -201,13 +201,32 @@ func publish(repo string, file string, user string, pass string, text string) er
 	return err
 }
 
+type Config struct {
+	GitUser string
+	GitPass string
+	PubRepo string
+	PubFile string
+	Header string
+	UpdateDelay time.Duration
+}
+
+func run(conf Config) {
+	d := Deduplicator{}
+	for {
+		peers, err := getPeersList()
+		if err != nil { panic(err) }
+		peers = normaliseUris(peers)
+		peers = resolveNames(peers)
+		text := collectRows(peers)
+		dd := d.get(text)
+		if dd != nil {
+			text = strings.TrimSuffix(conf.Header, "\n")+"\n"+getTimestampRow()+text
+			err = publish(conf.PubRepo, conf.PubFile, conf.GitUser, conf.GitPass, text)
+			if err != nil { panic(err) }
+		}
+		time.Sleep(conf.UpdateDelay)
+	}
+}
+
 func main() {
-	peers, err := getPeersList()
-    if err != nil { panic(err) }
-    peers = normaliseUris(peers)
-    peers = resolveNames(peers)
-    text := getTimestampRow()+collectRows(peers)
-    fmt.Println("")
-    err = publish("", "/yggdrasil.txt", "", "", text)
-    if err != nil { panic(err) }
 }
