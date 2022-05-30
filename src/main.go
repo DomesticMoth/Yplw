@@ -1,7 +1,6 @@
 package main
 
 import (
-        //"fmt"
         "time"
         "strings"
         "bytes"
@@ -9,6 +8,7 @@ import (
         "net"
         "net/url"
         "math/rand"
+        "github.com/DomesticMoth/confer"
         h "net/http"
         log "github.com/sirupsen/logrus"
         billy "github.com/go-git/go-billy/v5"
@@ -17,6 +17,7 @@ import (
         http "github.com/go-git/go-git/v5/plumbing/transport/http"
         memory "github.com/go-git/go-git/v5/storage/memory"
         object "github.com/go-git/go-git/v5/plumbing/object"
+        str2duration "github.com/xhit/go-str2duration/v2"
 )
 
 func getAllFilesRecursiveByPath(fs *billy.Filesystem, path string) ([]string, error) {
@@ -226,6 +227,16 @@ func storage(update chan string, req chan chan string){
 	}
 }
 
+type PreConfig struct {
+	GitUser string
+	GitPass string
+	PubRepo string
+	PubPath string
+	Header string
+	Http string
+	UpdateDelay string
+}
+
 type Config struct {
 	GitUser string
 	GitPass string
@@ -269,20 +280,24 @@ func listener(conf Config, req chan chan string) {
 }
 
 func main() {
+	var preconf PreConfig
+	err := confer.LoadConfig([]string{}, &preconf)
+	if err != nil { log.Fatal(err) }
+	delay, err := str2duration.ParseDuration(preconf.UpdateDelay)
+	if err != nil { log.Fatal(err) }
+	conf := Config{
+		preconf.GitUser,
+		preconf.GitPass,
+		preconf.PubRepo,
+		preconf.PubPath,
+		preconf.Header,
+		preconf.Http,
+		delay,
+	}
 	update := make(chan string)
 	req := make(chan chan string)
-	conf := Config{
-		"KEY",
-		"",
-		"https://github.com/DomesticMoth/MPL",
-		"/yggdrasil.txt",
-		"# Some header",
-		"127.0.0.1:7788",
-		time.Duration(time.Second * 10000),
-	}
 	log.Info("Starting")
 	go storage(update, req)
 	go listener(conf, req)
 	log.Fatal(run(conf, update))
-	// Add json configuretion
 }
