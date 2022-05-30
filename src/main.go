@@ -7,6 +7,7 @@ import (
         "bytes"
         "net"
         "net/url"
+        "math/rand"
         billy "github.com/go-git/go-billy/v5"
         memfs "github.com/go-git/go-billy/v5/memfs"
         git "github.com/go-git/go-git/v5"
@@ -201,6 +202,15 @@ func publish(repo string, file string, user string, pass string, text string) er
 	return err
 }
 
+func rowsMixer(s string) string {
+	rows := strings.Split(s, "\n")
+	for i := range rows {
+	    j := rand.Intn(i + 1)
+	    rows[i], rows[j] = rows[j], rows[i]
+	}
+	return collectRows(rows)
+}
+
 type Config struct {
 	GitUser string
 	GitPass string
@@ -220,7 +230,7 @@ func run(conf Config) {
 		text := collectRows(peers)
 		dd := d.get(text)
 		if dd != nil {
-			text = strings.TrimSuffix(conf.Header, "\n")+"\n"+getTimestampRow()+text
+			text = strings.TrimSuffix(conf.Header, "\n")+"\n"+getTimestampRow()+rowsMixer(text)
 			err = publish(conf.PubRepo, conf.PubFile, conf.GitUser, conf.GitPass, text)
 			if err != nil { panic(err) }
 		}
@@ -229,4 +239,8 @@ func run(conf Config) {
 }
 
 func main() {
+	// Add random mix for peer list
+	// Add logging
+	// Add http serving
+	// Add json configuretion
 }
