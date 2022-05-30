@@ -10,6 +10,7 @@ import (
         "net/url"
         "math/rand"
         h "net/http"
+        log "github.com/sirupsen/logrus"
         billy "github.com/go-git/go-billy/v5"
         memfs "github.com/go-git/go-billy/v5/memfs"
         git "github.com/go-git/go-git/v5"
@@ -235,20 +236,22 @@ type Config struct {
 	UpdateDelay time.Duration
 }
 
-func run(conf Config, update chan string) {
+func run(conf Config, update chan string) error {
 	d := Deduplicator{}
 	for {
 		peers, err := getPeersList()
-		if err != nil { panic(err) }
+		if err != nil { return err }
 		peers = normaliseUris(peers)
 		peers = resolveNames(peers)
 		text := collectRows(peers)
+		log.Info("Checked")
 		dd := d.get(text)
 		if dd != nil {
 			text = strings.TrimSuffix(conf.Header, "\n")+"\n"+getTimestampRow()+rowsMixer(text)
 			err = publish(conf.PubRepo, conf.PubPath, conf.GitUser, conf.GitPass, text)
-			if err != nil { panic(err) }
+			if err != nil { return err }
 			update <- text
+			log.Info("Updated")
 		}
 		time.Sleep(conf.UpdateDelay)
 	}
@@ -262,7 +265,7 @@ func listener(conf Config, req chan chan string) {
 		fmt.Fprintf(w, "%s", txt)
 	}
 	h.HandleFunc(conf.PubPath, httpHandler)
-	panic(h.ListenAndServe(conf.Http, nil))
+	log.Fatal(h.ListenAndServe(conf.Http, nil))
 }
 
 func main() {
@@ -277,9 +280,9 @@ func main() {
 		"127.0.0.1:7788",
 		time.Duration(time.Second * 10000),
 	}
+	log.Info("Starting")
 	go storage(update, req)
 	go listener(conf, req)
-	run(conf, update)
-	// Add logging
+	log.Fatal(run(conf, update))
 	// Add json configuretion
 }
