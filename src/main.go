@@ -5,9 +5,11 @@ import (
         "time"
         "strings"
         "bytes"
+        "fmt"
         "net"
         "net/url"
         "math/rand"
+        h "net/http"
         billy "github.com/go-git/go-billy/v5"
         memfs "github.com/go-git/go-billy/v5/memfs"
         git "github.com/go-git/go-git/v5"
@@ -211,16 +213,29 @@ func rowsMixer(s string) string {
 	return collectRows(rows)
 }
 
+func storage(update chan string, req chan chan string){
+	text := ""
+	for {
+		select {
+			case t := <- update:
+				text = t
+			case resp := <- req:
+				resp <- text
+		}
+	}
+}
+
 type Config struct {
 	GitUser string
 	GitPass string
 	PubRepo string
-	PubFile string
+	PubPath string
 	Header string
+	Http string
 	UpdateDelay time.Duration
 }
 
-func run(conf Config) {
+func run(conf Config, update chan string) {
 	d := Deduplicator{}
 	for {
 		peers, err := getPeersList()
@@ -231,16 +246,40 @@ func run(conf Config) {
 		dd := d.get(text)
 		if dd != nil {
 			text = strings.TrimSuffix(conf.Header, "\n")+"\n"+getTimestampRow()+rowsMixer(text)
-			err = publish(conf.PubRepo, conf.PubFile, conf.GitUser, conf.GitPass, text)
+			err = publish(conf.PubRepo, conf.PubPath, conf.GitUser, conf.GitPass, text)
 			if err != nil { panic(err) }
+			update <- text
 		}
 		time.Sleep(conf.UpdateDelay)
 	}
 }
 
+func listener(conf Config, req chan chan string) {
+	httpHandler := func(w h.ResponseWriter, r *h.Request) {
+		resp := make(chan string)
+		req <- resp
+		txt := <- resp
+		fmt.Fprintf(w, "%s", txt)
+	}
+	h.HandleFunc(conf.PubPath, httpHandler)
+	panic(h.ListenAndServe(conf.Http, nil))
+}
+
 func main() {
-	// Add random mix for peer list
+	update := make(chan string)
+	req := make(chan chan string)
+	conf := Config{
+		"KEY",
+		"",
+		"https://github.com/DomesticMoth/MPL",
+		"/yggdrasil.txt",
+		"# Some header",
+		"127.0.0.1:7788",
+		time.Duration(time.Second * 10000),
+	}
+	go storage(update, req)
+	go listener(conf, req)
+	run(conf, update)
 	// Add logging
-	// Add http serving
 	// Add json configuretion
 }
