@@ -1,0 +1,6 @@
+Package: Yplw
+Version: 0.0.1
+Maintainer: DomesticMoth
+Section: utils
+Description: Yggdrasil Peers List Watcher
+Origin: https://github.com/DomesticMoth/Yplw

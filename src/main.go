@@ -281,7 +281,7 @@ func listener(conf Config, req chan chan string) {
 
 func main() {
 	var preconf PreConfig
-	err := confer.LoadConfig([]string{}, &preconf)
+	err := confer.LoadConfig([]string{"/etc/yplw/yplw.toml"}, &preconf)
 	if err != nil { log.Fatal(err) }
 	delay, err := str2duration.ParseDuration(preconf.UpdateDelay)
 	if err != nil { log.Fatal(err) }

@@ -1,0 +1,7 @@
+GitUser=""
+GitPass=""
+PubRepo=""
+PubPath="/yggdrasil.txt"
+Header="# Some header"
+Http="127.0.0.1:31415"
+UpdateDelay="1h"
