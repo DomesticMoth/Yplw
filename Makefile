@@ -23,7 +23,7 @@ build-deb-x64: build-x64
 	cp out/x64/yplw out/x64/yplw-pkg/usr/bin/yplw
 	dpkg-deb --build out/x64/yplw-pkg
 
-installdeb-x64: clean build-deb-x64
+installdeb-x64: clear build-deb-x64
 	apt install ./out/x64/yplw-pkg.deb
 	systemctl daemon-reload
 	systemctl enable yplw
