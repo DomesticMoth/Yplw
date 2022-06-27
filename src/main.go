@@ -89,7 +89,7 @@ func normaliseUris(peers []string) []string {
 		if u.Scheme == "socks" {
 			host, _, _ := net.SplitHostPort(u.Host)
 			if !(host == "localhost" || host == "127.0.0.1") { continue }
-			peer = "tcp://"+strings.TrimPrefix(peer, "socks://"+u.Host+"/")
+			peer = "tls://"+strings.TrimPrefix(peer, "socks://"+u.Host+"/")
 			ret = append(ret, peer)
 		}else if u.Scheme == "tcp" || u.Scheme == "tls" {
 			ret = append(ret, peer)
